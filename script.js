@@ -639,7 +639,8 @@ function animateCounters() {
         if (!ticking) {
             requestAnimationFrame(() => {
                 const s = window.scrollY;
-                diamond.style.transform = `translateY(calc(-50% + ${s * 0.14}px))`;
+                // Use margin-top offset instead of transform so we don't override the CSS spin
+                diamond.style.marginTop = (s * 0.14) + 'px';
                 ticking = false;
             });
             ticking = true;
@@ -669,3 +670,4 @@ document.addEventListener('DOMContentLoaded', function() {
     const em = document.querySelector('.hero-title em');
     if (em) em.setAttribute('data-text', em.textContent);
 });
+
