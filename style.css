@@ -389,7 +389,7 @@ nav.scrolled {
     pointer-events: none;
 }
 
-/* ===================== HERO DIAMOND — 3D ENHANCED ===================== */
+/* ===================== HERO DIAMOND — 3D THREE.JS ===================== */
 .hero-diamond {
     position: absolute;
     left: 5%;
@@ -402,21 +402,17 @@ nav.scrolled {
     will-change: transform;
 }
 
+#diamondCanvas3d {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    border-radius: 50%;
+    animation: diamondFloat 6s ease-in-out infinite;
+}
+
 @keyframes fadeInLeft {
     from { opacity: 0; transform: translateY(-50%) translateX(-60px) scale(0.9); }
     to   { opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
-}
-
-.diamond-svg {
-    width: 100%; height: 100%;
-    animation: rotateDiamond 18s linear infinite, diamondFloat 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 50px rgba(201,168,76,0.35)) drop-shadow(0 0 100px rgba(201,168,76,0.1));
-    transition: filter 0.4s ease;
-}
-
-@keyframes rotateDiamond {
-    from { transform: rotateY(0deg); }
-    to   { transform: rotateY(360deg); }
 }
 
 @keyframes diamondFloat {
@@ -424,8 +420,8 @@ nav.scrolled {
     50%      { margin-top: -14px; }
 }
 
-.hero-diamond:hover .diamond-svg {
-    filter: drop-shadow(0 0 80px rgba(201,168,76,0.7)) drop-shadow(0 0 30px rgba(255,255,255,0.25));
+.hero-diamond:hover #diamondCanvas3d {
+    filter: drop-shadow(0 0 80px rgba(201,168,76,0.7));
 }
 
 /* Shine rings — pulsing halos */
@@ -1663,6 +1659,441 @@ footer::before {
 button:focus-visible, a:focus-visible {
     outline: 1px solid var(--gold); outline-offset: 3px;
 }
+
+/* ===================== THEME TOGGLE ===================== */
+:root {
+    --theme-bg: #060606;
+    --theme-dark: #0d0d0d;
+    --theme-dark2: #141414;
+    --theme-dark3: #1a1a1a;
+}
+
+body.theme-navy {
+    --theme-bg: #030a14;
+    --theme-dark: #061220;
+    --theme-dark2: #091a2e;
+    --theme-dark3: #0d2240;
+    --black: #030a14;
+    --dark: #061220;
+    --dark2: #091a2e;
+    --dark3: #0d2240;
+}
+
+body.theme-navy { background: var(--theme-bg); }
+body.theme-navy #home,
+body.theme-navy #about,
+body.theme-navy #contact,
+body.theme-navy #gallery,
+body.theme-navy #blog { background: var(--theme-bg); }
+body.theme-navy .hero-bg {
+    background:
+        radial-gradient(ellipse at 25% 50%, rgba(201,168,76,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 20%, rgba(100,160,255,0.06) 0%, transparent 45%),
+        var(--theme-bg);
+}
+body.theme-navy nav { background: rgba(3,10,20,0.9); }
+body.theme-navy .feature-card,
+body.theme-navy .blog-card,
+body.theme-navy .about-card,
+body.theme-navy .team-card-new { background: rgba(6,18,32,0.8); border-color: rgba(201,168,76,0.15); }
+body.theme-navy footer { background: #020810; }
+body.theme-navy .about-counters { background: #020810; }
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.theme-toggle {
+    background: none;
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    width: 38px; height: 38px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    transition: all 0.3s var(--ease-spring);
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-toggle:hover {
+    background: rgba(201,168,76,0.1);
+    border-color: var(--gold);
+    transform: rotate(180deg);
+}
+
+.theme-toggle-icon {
+    transition: transform 0.5s var(--ease-spring);
+    display: inline-block;
+}
+
+body.theme-navy .theme-toggle-icon { transform: rotate(180deg); color: #aaddff; }
+body.theme-navy .theme-toggle { border-color: rgba(100,160,255,0.4); color: #aaddff; }
+
+/* ===================== PAGE WIPE TRANSITION ===================== */
+#pageWipe {
+    position: fixed;
+    inset: 0;
+    z-index: 99998;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.wipe-bar {
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(105deg,
+        transparent 0%,
+        rgba(201,168,76,0.04) 20%,
+        rgba(201,168,76,0.18) 48%,
+        rgba(232,201,122,0.22) 50%,
+        rgba(201,168,76,0.18) 52%,
+        rgba(201,168,76,0.04) 80%,
+        transparent 100%
+    );
+    transition: none;
+}
+
+.wipe-bar.wipe-active {
+    animation: goldWipe 0.65s var(--ease-in-out-quint) forwards;
+}
+
+@keyframes goldWipe {
+    0%   { left: -100%; }
+    100% { left: 120%; }
+}
+
+/* ===================== CURSOR SPARKLE TRAIL ===================== */
+#cursorTrail { position: fixed; inset: 0; pointer-events: none; z-index: 99997; }
+
+.trail-diamond {
+    position: absolute;
+    pointer-events: none;
+    font-size: 0.55rem;
+    color: var(--gold);
+    transform: translate(-50%, -50%);
+    animation: trailFade 0.9s ease-out forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes trailFade {
+    0%   { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(-50%, -120%) scale(0.2) rotate(180deg); }
+}
+
+/* ===================== HERO VIDEO BACKGROUND ===================== */
+.hero-video-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+}
+
+.hero-video-wrap.loaded { opacity: 1; }
+
+.hero-video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: saturate(0.6) brightness(0.35);
+}
+
+.hero-video-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 30% 50%, rgba(201,168,76,0.12) 0%, transparent 60%),
+        linear-gradient(to right, rgba(6,6,6,0.85) 35%, rgba(6,6,6,0.5) 100%);
+}
+
+/* ===================== HERO VIDEO TOGGLE ===================== */
+.video-toggle {
+    position: absolute;
+    bottom: 32px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: none;
+    border: 1px solid rgba(201,168,76,0.3);
+    color: rgba(201,168,76,0.7);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.52rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex; align-items: center; gap: 8px;
+}
+.video-toggle:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.06); }
+.video-toggle-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold);
+    animation: videoDotPulse 1.5s ease-in-out infinite;
+}
+@keyframes videoDotPulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.6); }
+}
+
+/* ===================== FLOATING DIAMOND PARTICLES ===================== */
+#floatParticles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+    overflow: hidden;
+}
+
+.float-gem {
+    position: absolute;
+    bottom: -30px;
+    font-size: 0.6rem;
+    color: var(--gold);
+    opacity: 0;
+    animation: floatUp linear forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes floatUp {
+    0%   { opacity: 0;   transform: translateY(0) rotate(0deg) scale(0.5); }
+    10%  { opacity: 0.7; }
+    80%  { opacity: 0.4; }
+    100% { opacity: 0;   transform: translateY(-110vh) rotate(360deg) scale(1.1); }
+}
+
+/* ===================== ABOUT COUNTERS ===================== */
+.about-counters {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--dark);
+    border-top: 1px solid rgba(201,168,76,0.12);
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+}
+
+.about-counter-item {
+    padding: 54px 24px;
+    text-align: center;
+    border-right: 1px solid rgba(201,168,76,0.08);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s;
+}
+
+.about-counter-item:last-child { border-right: none; }
+
+.about-counter-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 120%, rgba(201,168,76,0.08) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+.about-counter-item:hover::before { opacity: 1; }
+
+.about-counter-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3.8rem;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 12px;
+    transition: transform 0.3s var(--ease-spring), text-shadow 0.3s;
+}
+
+.about-counter-item:hover .about-counter-num {
+    transform: scale(1.06);
+    text-shadow: 0 0 30px rgba(201,168,76,0.4);
+}
+
+.about-counter-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gray);
+    font-weight: 300;
+}
+
+@media (max-width: 768px) {
+    .about-counters { grid-template-columns: repeat(2, 1fr); }
+    .about-counter-item:nth-child(2) { border-right: none; }
+    .about-counter-item { padding: 36px 16px; }
+    .about-counter-num { font-size: 2.8rem; }
+    .nav-right { gap: 10px; }
+}
+
+@media (max-width: 480px) {
+    .about-counters { grid-template-columns: repeat(2, 1fr); }
+    .about-counter-num { font-size: 2.4rem; }
+}
+
+/* ===================== MICRO ANIMATIONS ===================== */
+
+/* --- Button Ripple Effect --- */
+.btn-gold, .btn-outline, .submit-btn, .filter-btn {
+    position: relative;
+    overflow: hidden;
+}
+.btn-gold::after, .btn-outline::after, .submit-btn::after, .filter-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), rgba(255,255,255,0.22) 0%, transparent 65%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+.btn-gold:hover::after, .btn-outline:hover::after,
+.submit-btn:hover::after, .filter-btn:hover::after { opacity: 1; }
+
+/* --- Feature Card Shimmer Sweep --- */
+.feature-card { position: relative; overflow: hidden; }
+.feature-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -120%;
+    width: 60%; height: 100%;
+    background: linear-gradient(105deg, transparent 30%, rgba(201,168,76,0.07) 50%, transparent 70%);
+    transition: left 0.7s var(--ease-out-expo);
+    pointer-events: none;
+}
+.feature-card:hover::after { left: 160%; }
+
+/* --- Feature Icon Bounce on Hover --- */
+.feature-icon {
+    display: inline-block;
+    transition: transform 0.4s var(--ease-spring), filter 0.4s;
+}
+.feature-card:hover .feature-icon {
+    transform: scale(1.25) rotate(-8deg);
+    filter: drop-shadow(0 0 10px rgba(201,168,76,0.55));
+}
+
+/* --- Nav Link Underline Slide --- */
+.nav-links li a { position: relative; }
+.nav-links li a::after {
+    content: '';
+    position: absolute;
+    bottom: -3px; left: 50%; right: 50%;
+    height: 1px;
+    background: var(--gold);
+    transition: left 0.3s var(--ease-out-expo), right 0.3s var(--ease-out-expo);
+}
+.nav-links li a:hover::after, .nav-links li a.active-link::after { left: 0; right: 0; }
+
+/* --- Form Input Focus Glow --- */
+.form-input, .form-select, .form-textarea {
+    transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    box-shadow: 0 0 0 2px rgba(201,168,76,0.18), 0 0 18px rgba(201,168,76,0.08);
+    outline: none;
+}
+
+/* --- Form Label Gold on Focus --- */
+.form-label { display: block; transition: color 0.3s, letter-spacing 0.3s; }
+.form-group:focus-within .form-label { color: var(--gold); letter-spacing: 0.14em; }
+
+/* --- Team Avatar Pulse Ring --- */
+.team-avatar-new { position: relative; }
+.team-avatar-new::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px solid rgba(201,168,76,0);
+    transition: border-color 0.4s, inset 0.4s var(--ease-spring);
+}
+.team-card-new:hover .team-avatar-new::after {
+    border-color: rgba(201,168,76,0.45);
+    inset: -10px;
+}
+
+/* --- Blog Card Gold Border Sweep --- */
+.blog-card { position: relative; }
+.blog-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 0%; height: 1px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    transition: width 0.5s var(--ease-out-expo);
+}
+.blog-card:hover::before { width: 100%; }
+
+/* --- Blog Read More Arrow Slide --- */
+.blog-read-more {
+    display: inline-block;
+    transition: transform 0.3s var(--ease-spring), color 0.3s;
+}
+.blog-card:hover .blog-read-more { transform: translateX(6px); color: var(--gold-light); }
+
+/* --- Gallery Item Diamond Reveal --- */
+.gallery-item { position: relative; overflow: hidden; }
+.gallery-item::after {
+    content: '◆';
+    position: absolute;
+    bottom: -30px; right: 16px;
+    font-size: 0.7rem;
+    color: var(--gold);
+    opacity: 0;
+    transition: bottom 0.4s var(--ease-spring), opacity 0.4s;
+    pointer-events: none;
+}
+.gallery-item:hover::after { bottom: 14px; opacity: 0.7; }
+
+/* --- Stat Number Hover Glow --- */
+.stat-num { display: inline-block; transition: color 0.3s, text-shadow 0.3s, transform 0.3s var(--ease-spring); }
+.hero-stats > div:hover .stat-num {
+    color: var(--gold-light);
+    text-shadow: 0 0 24px rgba(201,168,76,0.4);
+    transform: scale(1.07);
+}
+
+/* --- Value Item Icon Flip on Hover --- */
+.value-icon { display: inline-block; transition: transform 0.5s var(--ease-spring); }
+.value-item:hover .value-icon { transform: rotateY(180deg) scale(1.1); }
+
+/* --- Footer Social Bounce --- */
+.social-btn { transition: transform 0.3s var(--ease-spring), border-color 0.3s, color 0.3s, background 0.3s; }
+.social-btn:hover { transform: translateY(-5px) scale(1.08); }
+
+/* --- Team Tags Shimmer --- */
+.team-tag { position: relative; overflow: hidden; }
+.team-tag::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.25), transparent);
+    transition: left 0.5s ease;
+}
+.team-card-new:hover .team-tag::after { left: 160%; }
+
+/* --- Diamond canvas glow breathe --- */
+#diamondCanvas3d { animation: diamondFloat 6s ease-in-out infinite; }
+
+/* --- Scroll-to-top Spin on Hover --- */
+.scroll-top:hover { transform: translateY(-4px) rotate(15deg); }
+
+/* --- Contact Info Item Slide --- */
+.contact-info-item { transition: transform 0.3s var(--ease-spring); }
+.contact-info-item:hover { transform: translateX(6px); }
+.contact-info-icon { transition: transform 0.4s var(--ease-spring); }
+.contact-info-item:hover .contact-info-icon { transform: scale(1.3) rotate(-10deg); }
+
+/* --- Marquee Pause on Hover --- */
+.marquee-section:hover .marquee-track { animation-play-state: paused; }
+.marquee-item { transition: color 0.3s; }
+.marquee-item:hover { color: var(--gold-light); cursor: default; }
+
+/* --- Section Label Hover --- */
+.section-label { transition: letter-spacing 0.4s, color 0.3s; }
 
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 900px) {
