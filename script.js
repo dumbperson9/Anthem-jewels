@@ -4,16 +4,6 @@
    split-text reveal, smooth page transitions, parallax layers
    ============================================================ */
 
-// ===== INQUIRY CHIP TOGGLE =====
-function toggleChip(el) {
-    el.classList.toggle('active');
-    // Update hidden input with all active chips
-    const chips = document.querySelectorAll('.inquiry-chip.active');
-    const values = Array.from(chips).map(c => c.dataset.val).join(', ');
-    const hidden = document.getElementById('inquiry-type');
-    if (hidden) hidden.value = values || '';
-}
-
 // ===== MOBILE NAV =====
 function toggleMenu() {
     document.getElementById('navLinks').classList.toggle('open');
@@ -54,7 +44,6 @@ function closeMenu() {
     if (!cursor || !ring) return;
 
     let mx = 0, my = 0, rx = 0, ry = 0;
-    let isHover = false;
 
     document.addEventListener('mousemove', e => {
         mx = e.clientX; my = e.clientY;
@@ -81,7 +70,7 @@ function closeMenu() {
     });
 
     function attachCursorHover() {
-        document.querySelectorAll('button, a, .gallery-item, .blog-card, .filter-btn, .team-card-new, .value-item').forEach(el => {
+        document.querySelectorAll('button, a, .gallery-item, .filter-btn, .team-card-new, .value-item').forEach(el => {
             if (el.dataset.cursorBound) return;
             el.dataset.cursorBound = '1';
             el.addEventListener('mouseenter', () => {
@@ -95,7 +84,7 @@ function closeMenu() {
         });
     }
     attachCursorHover();
-    setInterval(attachCursorHover, 1200);
+    setTimeout(attachCursorHover, 800);
 })();
 
 // ===== HERO PARTICLE CANVAS — enhanced with constellation lines =====
@@ -277,48 +266,50 @@ function showPage(name) {
 }
 
 // ===== FORM SUBMIT =====
-async function submitForm() {
-    const fname   = document.getElementById('fname').value.trim();
-    const lname   = document.getElementById('lname').value.trim();
-    const email   = document.getElementById('email').value.trim();
-    const inquiry = document.getElementById('inquiry-type').value;
-    const budget  = document.getElementById('budget').value;
-    const message = document.getElementById('message').value.trim();
+function submitForm() {
+    const fname   = (document.getElementById('fname')?.value || '').trim();
+    const lname   = (document.getElementById('lname')?.value || '').trim();
+    const phone   = (document.getElementById('phone')?.value || '').trim();
+    const email   = (document.getElementById('email')?.value || '').trim();
+    const inquiry = document.getElementById('inquiry-type')?.value || '';
+    const budget  = document.getElementById('budget')?.value || '';
+    const message = (document.getElementById('message')?.value || '').trim();
 
-    if (!fname || !email) {
-        alert('Please fill in your name and email.');
-        return;
-    }
+    if (!fname) { alert('Please enter your name.'); return; }
+    if (!inquiry && !message) { alert('Please tell us what you are looking for.'); return; }
 
+    // Build WhatsApp message
+    const parts = [
+        'Hi Anthem Jewels! I have an inquiry.',
+        '',
+        '*Name:* ' + fname + (lname ? ' ' + lname : ''),
+        phone   ? '*Phone:* ' + phone   : null,
+        email   ? '*Email:* ' + email   : null,
+        inquiry ? '*Looking for:* ' + inquiry : null,
+        budget  ? '*Budget:* ' + budget  : null,
+        message ? '*Message:* ' + message : null,
+        '',
+        '_Sent via Anthem Jewels website_'
+    ].filter(l => l !== null).join('\n');
+
+    const waUrl = 'https://wa.me/918800806032?text=' + encodeURIComponent(parts);
+
+    // Show loading on button
     const btn = document.querySelector('.submit-btn');
-    btn.textContent = 'Sending…';
-    btn.disabled = true;
+    if (btn) { btn.textContent = 'Opening WhatsApp…'; btn.disabled = true; }
 
-    try {
-        const res = await fetch('https://formspree.io/f/myklgqnw', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ name: fname + ' ' + lname, email, inquiry_type: inquiry, budget, message })
+    const suc = document.getElementById('form-success');
+    if (suc) { suc.style.display = 'block'; }
+
+    setTimeout(() => {
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+        ['fname','lname','phone','email','inquiry-type','budget','message'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
         });
-
-        if (res.ok) {
-            const suc = document.getElementById('form-success');
-            suc.style.display = 'block';
-            suc.style.animation = 'fadeInUp 0.5s ease forwards';
-            ['fname','lname','email','inquiry-type','budget','message'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = '';
-            });
-            setTimeout(() => { suc.style.display = 'none'; }, 5500);
-        } else {
-            alert('Something went wrong. Please try again.');
-        }
-    } catch(err) {
-        alert('Network error. Please check your connection.');
-    } finally {
-        btn.textContent = 'Send Inquiry ◆';
-        btn.disabled = false;
-    }
+        if (btn) { btn.textContent = 'Send Inquiry ◆'; btn.disabled = false; }
+        setTimeout(() => { if (suc) suc.style.display = 'none'; }, 5000);
+    }, 500);
 }
 
 // ===== SCROLL TO TOP =====
@@ -418,12 +409,14 @@ function makePlaceholder(d) {
     const shape = getShapeFromSub(d.sub);
     const icon = shapeIcons[shape] || shapeIcons.default;
     const ct = d.sub.match(/[\d.]+\s*ct/)?.[0] || '';
+    const grade = d.sub.match(/[A-Z]\/[A-Z0-9]+/)?.[0] || '';
+    const catLabel = { round:'Round Brilliant', fancy:'Fancy Cut', colored:'Colored Diamond', rare:'Rare & Collector' }[d.cat] || '';
     return `
     <div class="placeholder-card" style="background:${c.bg};border-color:${c.border};">
       <div class="placeholder-icon" style="color:${c.icon};">${icon}</div>
-      <div class="placeholder-label" style="color:${c.icon};">Add Photo</div>
-      <div class="placeholder-filename">img_${d.id}.jpg</div>
-      ${ct ? `<div class="placeholder-ct">${ct}</div>` : ''}
+      ${ct ? `<div class="placeholder-ct" style="color:${c.icon};">${ct}</div>` : ''}
+      ${grade ? `<div class="placeholder-grade">${grade}</div>` : ''}
+      <div class="placeholder-cat" style="color:${c.icon};">${catLabel}</div>
     </div>`;
 }
 
@@ -534,7 +527,7 @@ const revealObserver = new IntersectionObserver(function(entries) {
 }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
 
 function attachReveal() {
-    document.querySelectorAll('.feature-card, .value-item, .team-card-new, .blog-card, .contact-info-item, .about-text p, .about-text h2, .gallery-item').forEach(function(el, i) {
+    document.querySelectorAll('.feature-card, .value-item, .team-card-new, .contact-info-item, .about-text p, .about-text h2, .gallery-item').forEach(function(el, i) {
         if (!el.classList.contains('reveal')) {
             el.classList.add('reveal');
             if (i % 3 === 1) el.classList.add('reveal-delay-1');
@@ -545,7 +538,7 @@ function attachReveal() {
 }
 attachReveal();
 setTimeout(attachReveal, 500);
-setInterval(attachReveal, 1200);
+setTimeout(attachReveal, 1200); // one-time delayed init, MutationObserver handles the rest
 
 // ===== CLICK SPARKLE — gold burst =====
 document.addEventListener('click', function(e) {
@@ -572,7 +565,7 @@ document.addEventListener('click', function(e) {
     setTimeout(() => burst.remove(), 800);
 });
 
-function rand(a, b) { return Math.random() * (b - a) + a; }
+// rand() already defined in particle scope above
 
 // ===== ANIMATED STAT COUNTERS =====
 function animateCounters() {
@@ -935,7 +928,7 @@ function animateCounters() {
 
 // ===== KEYBOARD NAV =====
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeLightbox(); closeMenu(); }
+    if (e.key === 'Escape') { closeLightbox(); closeGemLightbox(); closeMenu(); }
 });
 
 // ===== GALLERY INIT =====
@@ -972,7 +965,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     attachRipple();
-    setInterval(attachRipple, 1200);
+    setTimeout(attachRipple, 1000);
 })();
 
 // ===== MICRO: FORM INPUT CHARACTER SHIMMER =====
@@ -987,18 +980,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 })();
 
-// ===== MICRO: STAGGERED REVEAL FOR BLOG CARDS =====
-(function() {
-    function staggerBlog() {
-        document.querySelectorAll('.blog-card').forEach(function(card, i) {
-            if (card.dataset.staggered) return;
-            card.dataset.staggered = '1';
-            card.style.transitionDelay = (i * 0.07) + 's';
-        });
-    }
-    staggerBlog();
-    setTimeout(staggerBlog, 800);
-})();
+// (blog stagger removed — no blog page)
 
 // ===== MICRO: TEAM DIAMOND ACCENT SPIN ON CARD HOVER =====
 (function() {
@@ -1055,7 +1037,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // ===== FEATURE 1: GOLD PAGE WIPE TRANSITION =====
 // ===========================
 (function() {
-    // Patch showPage to trigger wipe without redefining the function
+    // Patch showPage to trigger wipe — guard against double-wrapping
+    if (window._showPageWipeWrapped) return;
+    window._showPageWipeWrapped = true;
     const _orig = window.showPage;
     window.showPage = function(name) {
         const wipe = document.querySelector('.wipe-bar');
@@ -1197,7 +1181,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     initCounterObs();
     // Also trigger when about page is visited
-    setInterval(initCounterObs, 800);
+    setTimeout(initCounterObs, 1000);
 })();
 
 // ===========================
@@ -1257,3 +1241,335 @@ function toggleVideo() {
     }
 }
 
+// ============================================================
+// BATCH 3 — ALL NEW FEATURES
+// ============================================================
+
+// ===== 1. TESTIMONIALS SLIDER =====
+(function() {
+    function initTesti() {
+        const track = document.getElementById('testimonialsTrack');
+        const dotsEl = document.getElementById('testiDots');
+        if (!track || !dotsEl || track.dataset.init) return;
+        track.dataset.init = '1';
+
+        const cards = track.querySelectorAll('.testi-card');
+        let perView = window.innerWidth <= 600 ? 1 : window.innerWidth <= 900 ? 2 : 3;
+        let current = 0;
+        const total = Math.ceil(cards.length / perView);
+
+        // Build dots
+        dotsEl.innerHTML = '';
+        for (let i = 0; i < total; i++) {
+            const d = document.createElement('div');
+            d.className = 'testi-dot' + (i === 0 ? ' active' : '');
+            d.onclick = () => goTo(i);
+            dotsEl.appendChild(d);
+        }
+
+        function goTo(idx) {
+            current = Math.max(0, Math.min(idx, total - 1));
+            const cardW = cards[0].getBoundingClientRect().width + 28;
+            track.style.transform = `translateX(-${current * perView * cardW}px)`;
+            dotsEl.querySelectorAll('.testi-dot').forEach((d, i) => {
+                d.classList.toggle('active', i === current);
+            });
+        }
+
+        // Auto advance
+        const autoTimer = setInterval(() => goTo((current + 1) % total), 5000);
+
+        // Touch swipe
+        let touchStartX = 0;
+        track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+        track.addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            if (Math.abs(dx) > 50) goTo(dx < 0 ? current + 1 : current - 1);
+        });
+
+        window.addEventListener('resize', () => {
+            perView = window.innerWidth <= 600 ? 1 : window.innerWidth <= 900 ? 2 : 3;
+            goTo(0);
+        });
+    }
+    initTesti();
+    setTimeout(initTesti, 800);
+})();
+
+// ===== 2. STICKY QUOTE BAR =====
+(function() {
+    const bar = document.getElementById('stickyQuoteBar');
+    if (!bar) return;
+    let shown = false;
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 450 && !shown) {
+            shown = true;
+            bar.classList.add('visible');
+        } else if (window.scrollY < 200 && shown) {
+            shown = false;
+            bar.classList.remove('visible');
+        }
+    }, { passive: true });
+})();
+
+// ===== 3. WHATSAPP PREFILL FROM GALLERY LIGHTBOX =====
+// Patch openLightbox to set the WA button href
+const _origOpenLightbox = openLightbox;
+window.openLightbox = function(d) {
+    _origOpenLightbox(d);
+    const waBtn = document.getElementById('lightboxWaBtn');
+    if (waBtn) {
+        const msg = encodeURIComponent(`Hi, I'm interested in the ${d.name} (${d.sub}) from Anthem Jewels. Can you please share more details?`);
+        waBtn.href = `https://wa.me/918800806032?text=${msg}`;
+    }
+    // Randomize viewer count between 1–4
+    const vc = document.getElementById('viewersCount');
+    if (vc) vc.textContent = Math.floor(Math.random() * 3) + 1;
+};
+
+// ===== 4. "CURRENTLY VIEWING" BADGES ON GALLERY CARDS =====
+function addViewingBadges() {
+    document.querySelectorAll('.gallery-item').forEach(function(item) {
+        if (item.dataset.badged) return;
+        item.dataset.badged = '1';
+        // Only ~40% of cards get a badge
+        if (Math.random() > 0.4) return;
+        const badge = document.createElement('div');
+        badge.className = 'viewing-badge';
+        badge.innerHTML = `<span class="viewing-badge-dot"></span>${Math.floor(Math.random() * 3) + 1} viewing`;
+        item.querySelector('.gallery-item-inner').appendChild(badge);
+    });
+}
+// Hook into renderGallery
+const _origRenderGallery = renderGallery;
+window.renderGallery = function(filter) {
+    _origRenderGallery(filter);
+    setTimeout(addViewingBadges, 400);
+};
+
+// ===== 5. MAGNETIC BUTTONS =====
+(function() {
+    function attachMagnetic() {
+        document.querySelectorAll('.btn-gold, .btn-outline, .submit-btn').forEach(function(btn) {
+            if (btn.dataset.magnetic) return;
+            btn.dataset.magnetic = '1';
+
+            btn.addEventListener('mousemove', function(e) {
+                const r = btn.getBoundingClientRect();
+                const cx = r.left + r.width  / 2;
+                const cy = r.top  + r.height / 2;
+                const dx = (e.clientX - cx) * 0.28;
+                const dy = (e.clientY - cy) * 0.28;
+                btn.style.transform = `translate(${dx}px, ${dy}px)`;
+            });
+
+            btn.addEventListener('mouseleave', function() {
+                btn.style.transition = 'transform 0.5s var(--ease-spring)';
+                btn.style.transform = '';
+                setTimeout(() => btn.style.transition = '', 500);
+            });
+
+            btn.addEventListener('mouseenter', function() {
+                btn.style.transition = 'transform 0.1s ease';
+            });
+        });
+    }
+    attachMagnetic();
+    setTimeout(attachMagnetic, 1000);
+})();
+
+// ===== 6. DIAMOND RAIN ON PRELOADER =====
+(function() {
+    const preloader = document.getElementById('preloader');
+    if (!preloader) return;
+
+    const rain = document.createElement('div');
+    rain.className = 'preloader-rain';
+    preloader.appendChild(rain);
+
+    const GEMS = ['◆', '◇', '✦', '◈', '✧', '◆'];
+    let spawned = 0;
+
+    function spawnRainGem() {
+        if (spawned > 28) return;
+        spawned++;
+        const gem = document.createElement('div');
+        gem.className = 'rain-gem';
+        gem.textContent = GEMS[Math.floor(Math.random() * GEMS.length)];
+        gem.style.left = (Math.random() * 100) + '%';
+        gem.style.fontSize = (0.5 + Math.random() * 0.9) + 'rem';
+        gem.style.color = Math.random() > 0.5 ? '#C9A84C' : '#E8C97A';
+        const dur = 1.2 + Math.random() * 1.2;
+        gem.style.animationDuration = dur + 's';
+        gem.style.animationDelay = (Math.random() * 1.2) + 's';
+        rain.appendChild(gem);
+        gem.addEventListener('animationend', () => gem.remove());
+    }
+
+    const rainInterval = setInterval(spawnRainGem, 80);
+    setTimeout(() => clearInterval(rainInterval), 1800);
+})();
+
+// ===== 7. HERO TEXT SHIMMER ENHANCEMENT =====
+// (already handled via CSS — boost shimmer speed on hover)
+(function() {
+    const em = document.querySelector('.hero-title em');
+    if (!em) return;
+    em.addEventListener('mouseenter', function() {
+        em.style.animationDuration = '1s';
+    });
+    em.addEventListener('mouseleave', function() {
+        em.style.animationDuration = '';
+    });
+})();
+
+// ===== 8. SCROLL PARALLAX ON HERO LAYERS =====
+(function() {
+    let ticking = false;
+    window.addEventListener('scroll', function() {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function() {
+            const s = window.scrollY;
+            const bg = document.querySelector('.hero-bg');
+            const canvas = document.getElementById('heroCanvas');
+            const videoWrap = document.getElementById('heroVideoWrap');
+            if (bg)        bg.style.transform        = `translateY(${s * 0.25}px)`;
+            if (canvas)    canvas.style.transform    = `translateY(${s * 0.15}px)`;
+            if (videoWrap) videoWrap.style.transform = `translateY(${s * 0.2}px)`;
+            ticking = false;
+        });
+    }, { passive: true });
+})();
+
+// ===== 9. MOBILE SWIPE BETWEEN PAGES =====
+(function() {
+    const pages = ['home', 'about', 'gallery', 'gemstones', 'calculator', 'contact'];
+    let touchStartX = 0, touchStartY = 0;
+    let isSwiping = false;
+
+    // Add swipe hint
+    const hint = document.createElement('div');
+    hint.className = 'swipe-hint';
+    hint.textContent = '← swipe to navigate →';
+    document.body.appendChild(hint);
+
+    document.addEventListener('touchstart', function(e) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isSwiping = false;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(e) {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+
+        // Only horizontal swipes (dx > 80px, more horizontal than vertical)
+        if (Math.abs(dx) < 80 || dy > 60) return;
+
+        // Don't trigger on gallery filter or testimonials slider
+        if (e.target.closest('.gallery-filter') ||
+            e.target.closest('.testimonials-track-wrap') ||
+            e.target.closest('.lightbox')) return;
+
+        const activePage = document.querySelector('.page.active');
+        if (!activePage) return;
+        const currentIdx = pages.indexOf(activePage.id);
+        if (currentIdx === -1) return;
+
+        if (dx < 0 && currentIdx < pages.length - 1) {
+            showPage(pages[currentIdx + 1]);
+        } else if (dx > 0 && currentIdx > 0) {
+            showPage(pages[currentIdx - 1]);
+        }
+    }, { passive: true });
+})();
+
+// ===== 10. HAPTIC-STYLE BUTTON FLASH ON MOBILE TAP =====
+(function() {
+    if (!('ontouchstart' in window)) return;
+    document.addEventListener('touchstart', function(e) {
+        const btn = e.target.closest('.btn-gold, .btn-outline, .submit-btn, .filter-btn, .sticky-quote-btn');
+        if (!btn) return;
+        btn.style.transition = 'background 0.05s, color 0.05s, transform 0.05s';
+        btn.style.filter = 'brightness(1.3)';
+        btn.style.transform = 'scale(0.96)';
+        setTimeout(() => {
+            btn.style.filter = '';
+            btn.style.transform = '';
+        }, 120);
+    }, { passive: true });
+})();
+
+// (Stock badges removed)
+
+// ESC closes gem lightbox too (merged into existing keydown listener above)
+// Note: closeLightbox() and closeGemLightbox() are both called from the existing keydown handler
+
+// ===== BIRTHSTONE FINDER =====
+(function() {
+    function initBirthstone() {
+        const container = document.getElementById('birthstoneMonths');
+        if (!container || container.dataset.init) return;
+        container.dataset.init = '1';
+        birthstoneData.forEach((b, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'birthstone-month-btn';
+            btn.style.setProperty('--gem-mc', b.color);
+            btn.innerHTML = `<span class="birthstone-month-emoji">${b.emoji}</span><span class="birthstone-month-name">${b.month}</span>`;
+            btn.onclick = () => showBirthstone(b, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function showBirthstone(b, btn) {
+        document.querySelectorAll('.birthstone-month-btn').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        const result = document.getElementById('birthstoneResult');
+        document.getElementById('birthstoneGemVisual').textContent = b.emoji;
+        document.getElementById('birthstoneGemVisual').style.color = b.color;
+        document.getElementById('birthstoneGemName').textContent = b.stone;
+        document.getElementById('birthstoneGemFact').textContent = b.fact;
+        const wa = document.getElementById('birthstoneWaBtn');
+        const msg = encodeURIComponent(`Hi, I'm looking for a ${b.stone} — the birthstone for ${b.name}. Can you help?`);
+        wa.href = `https://wa.me/918800806032?text=${msg}`;
+        result.style.display = 'flex';
+        result.style.animation = 'none';
+        void result.offsetWidth;
+        result.style.animation = 'fadeInUp 0.45s var(--ease-out-expo) both';
+    }
+
+    // Init when gemstones page is visited
+    const _origShowPage2 = window.showPage;
+    window.showPage = function(name) {
+        const r = _origShowPage2(name);
+        if (name === 'gemstones') {
+            renderGemGrid('all');
+            initBirthstone();
+            // Reset swatch state
+            document.querySelectorAll('.gem-swatch').forEach(s => s.classList.remove('active'));
+            const firstSwatch = document.querySelector('.gem-swatch');
+            if (firstSwatch) firstSwatch.classList.add('active');
+        }
+        return r;
+    };
+
+    initBirthstone();
+})();
+
+// ===== BUNDLE BUILDER =====
+function sendBundleToWhatsApp() {
+    const diamond = document.getElementById('bundleDiamond').value;
+    const gem     = document.getElementById('bundleGem').value;
+    if (!diamond || !gem) {
+        alert('Please select both a diamond and a gemstone first.');
+        return;
+    }
+    const msg = encodeURIComponent(`Hi! I'd like to create a custom piece with:\n💎 Diamond: ${diamond}\n💎 Gemstone: ${gem}\n\nCan you help me design this from Anthem Jewels?`);
+    window.open(`https://wa.me/918800806032?text=${msg}`, '_blank');
+}
+
+// ===== INIT GEM GRID ON PAGE LOAD (if already on gemstones) =====
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('gemGrid')) renderGemGrid('all');
+});
