@@ -322,7 +322,7 @@ if (scrollTopBtn) {
 
 // ===== GALLERY DATA — 50 UNIQUE DIAMONDS =====
 const diamonds = [
-    { id: 1,  name: 'Celestial Round',       cat: 'round',   sub: 'Round Brilliant · 2.10 ct · D/IF',       img: '' },
+    { id: 1,  name: 'Celestial Round',       cat: 'round',   sub: 'Round Brilliant · 2.10 ct · D/IF',       img: './images/celestial-round-brilliant-cut-diamond-210-carat-d-__1_-removebg-preview.png' },
     { id: 2,  name: 'Classic Solitaire',      cat: 'round',   sub: 'Round Brilliant · 1.50 ct · E/VS2',      img: '' },
     { id: 3,  name: 'Arctic Light',           cat: 'round',   sub: 'Round Brilliant · 3.00 ct · D/VVS1',     img: '' },
     { id: 4,  name: 'Solar Blaze',            cat: 'round',   sub: 'Round Brilliant · 1.75 ct · F/VS1',      img: '' },
