@@ -1,8 +1,11 @@
 /* ============================================================
-   ANTHEM JEWELS — ENHANCED SCRIPT
-   New: ambient light, magnetic cursor, constellation particles,
+   ANTHEM JEWELS 
+   ambient light, magnetic cursor, constellation particles,
    split-text reveal, smooth page transitions, parallax layers
    ============================================================ */
+
+// ===== GLOBAL UTILITY — rand() must be global for sparkle burst =====
+function rand(a, b) { return Math.random() * (b - a) + a; }
 
 // ===== MOBILE NAV =====
 function toggleMenu() {
@@ -109,7 +112,7 @@ function closeMenu() {
     });
 
     const TYPES = ['dot', 'cross', 'diamond'];
-    function rand(a, b) { return Math.random() * (b - a) + a; }
+    // rand() is global — defined at top of file
 
     function createParticle() {
         const type = TYPES[Math.floor(Math.random() * TYPES.length)];
@@ -130,7 +133,9 @@ function closeMenu() {
         };
     }
 
-    for (let i = 0; i < 130; i++) particles.push(createParticle());
+    const isMobile = window.innerWidth <= 768;
+    const PARTICLE_COUNT = isMobile ? 55 : 130;
+    for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(createParticle());
 
     function drawDiamond(ctx, x, y, s) {
         ctx.beginPath();
@@ -275,8 +280,8 @@ function submitForm() {
     const budget  = document.getElementById('budget')?.value || '';
     const message = (document.getElementById('message')?.value || '').trim();
 
-    if (!fname) { alert('Please enter your name.'); return; }
-    if (!inquiry && !message) { alert('Please tell us what you are looking for.'); return; }
+    if (!fname) { showToast('Please enter your name.', 'error'); return; }
+    if (!inquiry && !message) { showToast('Please tell us what you are looking for.', 'error'); return; }
 
     // Build WhatsApp message
     const parts = [
@@ -565,7 +570,7 @@ document.addEventListener('click', function(e) {
     setTimeout(() => burst.remove(), 800);
 });
 
-// rand() already defined in particle scope above
+// rand() is defined globally at top of file
 
 // ===== ANIMATED STAT COUNTERS =====
 function animateCounters() {
@@ -1444,7 +1449,7 @@ window.renderGallery = function(filter) {
 
 // ===== 9. MOBILE SWIPE BETWEEN PAGES =====
 (function() {
-    const pages = ['home', 'about', 'gallery', 'gemstones', 'calculator', 'contact'];
+    const pages = ['home', 'about', 'gallery', 'gemstones',  'contact'];
     let touchStartX = 0, touchStartY = 0;
     let isSwiping = false;
 
@@ -1464,8 +1469,8 @@ window.renderGallery = function(filter) {
         const dx = e.changedTouches[0].clientX - touchStartX;
         const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
 
-        // Only horizontal swipes (dx > 80px, more horizontal than vertical)
-        if (Math.abs(dx) < 80 || dy > 60) return;
+        // Only horizontal swipes (dx > 110px, more horizontal than vertical)
+        if (Math.abs(dx) < 110 || dy > Math.abs(dx) * 0.4) return;
 
         // Don't trigger on gallery filter or testimonials slider
         if (e.target.closest('.gallery-filter') ||
@@ -1531,7 +1536,7 @@ window.renderGallery = function(filter) {
         document.getElementById('birthstoneGemName').textContent = b.stone;
         document.getElementById('birthstoneGemFact').textContent = b.fact;
         const wa = document.getElementById('birthstoneWaBtn');
-        const msg = encodeURIComponent(`Hi, I'm looking for a ${b.stone} — the birthstone for ${b.name}. Can you help?`);
+        const msg = encodeURIComponent(`Hi, I'm looking for a ${b.stone} — the birthstone for ${b.month}. Can you help?`);
         wa.href = `https://wa.me/918800806032?text=${msg}`;
         result.style.display = 'flex';
         result.style.animation = 'none';
@@ -1557,12 +1562,46 @@ window.renderGallery = function(filter) {
     initBirthstone();
 })();
 
+// ===== TOAST NOTIFICATION (replaces alert()) =====
+function showToast(message, type) {
+    let toast = document.getElementById('anthem-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'anthem-toast';
+        toast.style.cssText = `
+            position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px);
+            background:#1a1a1a; border:1px solid rgba(201,168,76,0.4);
+            color:#E8C97A; font-family:'Montserrat',sans-serif;
+            font-size:0.65rem; letter-spacing:0.14em; padding:14px 28px;
+            z-index:999999; pointer-events:none; opacity:0;
+            transition:opacity 0.3s ease, transform 0.3s ease;
+            text-align:center; white-space:nowrap;
+        `;
+        document.body.appendChild(toast);
+    }
+    if (type === 'error') {
+        toast.style.borderColor = 'rgba(255,100,100,0.5)';
+        toast.style.color = '#ff8080';
+    } else {
+        toast.style.borderColor = 'rgba(201,168,76,0.4)';
+        toast.style.color = '#E8C97A';
+    }
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
+    }, 3500);
+}
+
 // ===== BUNDLE BUILDER =====
 function sendBundleToWhatsApp() {
     const diamond = document.getElementById('bundleDiamond').value;
     const gem     = document.getElementById('bundleGem').value;
     if (!diamond || !gem) {
-        alert('Please select both a diamond and a gemstone first.');
+        showToast('Please select both a diamond and a gemstone first.', 'error');
         return;
     }
     const msg = encodeURIComponent(`Hi! I'd like to create a custom piece with:\n💎 Diamond: ${diamond}\n💎 Gemstone: ${gem}\n\nCan you help me design this from Anthem Jewels?`);
