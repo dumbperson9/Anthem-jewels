@@ -1040,23 +1040,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ===========================
 // ===== FEATURE 1: GOLD PAGE WIPE TRANSITION =====
+
 // ===========================
-(function() {
-    // Patch showPage to trigger wipe — guard against double-wrapping
-    if (window._showPageWipeWrapped) return;
-    window._showPageWipeWrapped = true;
-    const _orig = window.showPage;
-    window.showPage = function(name) {
-        const wipe = document.querySelector('.wipe-bar');
-        if (wipe) {
-            wipe.classList.remove('wipe-active');
-            void wipe.offsetWidth;
-            wipe.classList.add('wipe-active');
-            setTimeout(() => wipe.classList.remove('wipe-active'), 700);
-        }
-        return _orig(name);
-    };
-})();
+// ===== GOLD PAGE WIPE (called from central showPage) =====
+// ===========================
+function _triggerPageWipe() {
+    const wipe = document.querySelector('.wipe-bar');
+    if (wipe) {
+        wipe.classList.remove('wipe-active');
+        void wipe.offsetWidth;
+        wipe.classList.add('wipe-active');
+        setTimeout(() => wipe.classList.remove('wipe-active'), 700);
+    }
+}
 
 // ===========================
 // ===== FEATURE 2: CURSOR SPARKLE TRAIL =====
@@ -1512,55 +1508,39 @@ window.renderGallery = function(filter) {
 // Note: closeLightbox() and closeGemLightbox() are both called from the existing keydown handler
 
 // ===== BIRTHSTONE FINDER =====
-(function() {
-    function initBirthstone() {
-        const container = document.getElementById('birthstoneMonths');
-        if (!container || container.dataset.init) return;
-        container.dataset.init = '1';
-        birthstoneData.forEach((b, i) => {
-            const btn = document.createElement('button');
-            btn.className = 'birthstone-month-btn';
-            btn.style.setProperty('--gem-mc', b.color);
-            btn.innerHTML = `<span class="birthstone-month-emoji">${b.emoji}</span><span class="birthstone-month-name">${b.month}</span>`;
-            btn.onclick = () => showBirthstone(b, btn);
-            container.appendChild(btn);
-        });
-    }
+function initBirthstone() {
+    const container = document.getElementById('birthstoneMonths');
+    if (!container || container.dataset.init) return;
+    container.dataset.init = '1';
+    birthstoneData.forEach((b, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'birthstone-month-btn';
+        btn.style.setProperty('--gem-mc', b.color);
+        btn.innerHTML = `<span class="birthstone-month-emoji">${b.emoji}</span><span class="birthstone-month-name">${b.month}</span>`;
+        btn.onclick = () => showBirthstone(b, btn);
+        container.appendChild(btn);
+    });
+}
 
-    function showBirthstone(b, btn) {
-        document.querySelectorAll('.birthstone-month-btn').forEach(x => x.classList.remove('active'));
-        btn.classList.add('active');
-        const result = document.getElementById('birthstoneResult');
-        document.getElementById('birthstoneGemVisual').textContent = b.emoji;
-        document.getElementById('birthstoneGemVisual').style.color = b.color;
-        document.getElementById('birthstoneGemName').textContent = b.stone;
-        document.getElementById('birthstoneGemFact').textContent = b.fact;
-        const wa = document.getElementById('birthstoneWaBtn');
-        const msg = encodeURIComponent(`Hi, I'm looking for a ${b.stone} — the birthstone for ${b.month}. Can you help?`);
-        wa.href = `https://wa.me/918800806032?text=${msg}`;
-        result.style.display = 'flex';
-        result.style.animation = 'none';
-        void result.offsetWidth;
-        result.style.animation = 'fadeInUp 0.45s var(--ease-out-expo) both';
-    }
+function showBirthstone(b, btn) {
+    document.querySelectorAll('.birthstone-month-btn').forEach(x => x.classList.remove('active'));
+    btn.classList.add('active');
+    const result = document.getElementById('birthstoneResult');
+    document.getElementById('birthstoneGemVisual').textContent = b.emoji;
+    document.getElementById('birthstoneGemVisual').style.color = b.color;
+    document.getElementById('birthstoneGemName').textContent = b.stone;
+    document.getElementById('birthstoneGemFact').textContent = b.fact;
+    const wa = document.getElementById('birthstoneWaBtn');
+    const msg = encodeURIComponent(`Hi, I'm looking for a ${b.stone} — the birthstone for ${b.month}. Can you help?`);
+    wa.href = `https://wa.me/918800806032?text=${msg}`;
+    result.style.display = 'flex';
+    result.style.animation = 'none';
+    void result.offsetWidth;
+    result.style.animation = 'fadeInUp 0.45s var(--ease-out-expo) both';
+}
 
-    // Init when gemstones page is visited
-    const _origShowPage2 = window.showPage;
-    window.showPage = function(name) {
-        const r = _origShowPage2(name);
-        if (name === 'gemstones') {
-            renderGemGrid('all');
-            initBirthstone();
-            // Reset swatch state
-            document.querySelectorAll('.gem-swatch').forEach(s => s.classList.remove('active'));
-            const firstSwatch = document.querySelector('.gem-swatch');
-            if (firstSwatch) firstSwatch.classList.add('active');
-        }
-        return r;
-    };
-
-    initBirthstone();
-})();
+// Run initBirthstone on DOMContentLoaded if gemstones page is default
+document.addEventListener('DOMContentLoaded', function() { initBirthstone(); });
 
 // ===== TOAST NOTIFICATION (replaces alert()) =====
 function showToast(message, type) {
@@ -1596,6 +1576,156 @@ function showToast(message, type) {
     }, 3500);
 }
 
+// ===== CLOSE LIVE CHAT BUBBLE =====
+function closeLiveChat() {
+    const bubble = document.getElementById('liveChatBubble');
+    if (bubble) {
+        bubble.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        bubble.style.opacity = '0';
+        bubble.style.transform = 'translateY(20px)';
+        setTimeout(() => bubble.style.display = 'none', 350);
+    }
+}
+
+// Auto-show live chat after 8 seconds
+setTimeout(function() {
+    const bubble = document.getElementById('liveChatBubble');
+    if (bubble) {
+        bubble.style.display = 'flex';
+        setTimeout(() => {
+            bubble.style.opacity = '1';
+            bubble.style.transform = 'translateY(0)';
+        }, 50);
+    }
+}, 8000);
+
+// ===== BIRTHSTONE DATA =====
+const birthstoneData = [
+    { month:'January',   stone:'Garnet',      emoji:'🔴', color:'#c0392b', fact:'Deep red garnets symbolise trust, friendship, and protection. Prized since ancient Egypt.' },
+    { month:'February',  stone:'Amethyst',    emoji:'💜', color:'#8e44ad', fact:'Regal purple amethyst was once as precious as rubies. A stone of clarity and calm.' },
+    { month:'March',     stone:'Aquamarine',  emoji:'🩵', color:'#2980b9', fact:'The colour of tropical seas — sailors carried aquamarine for safe voyages.' },
+    { month:'April',     stone:'Diamond',     emoji:'💎', color:'#C9A84C', fact:'April\'s stone is the hardest substance on earth — pure brilliance, formed over billions of years.' },
+    { month:'May',       stone:'Emerald',     emoji:'💚', color:'#27ae60', fact:'Cleopatra\'s favourite gem. Colombian emeralds command some of the highest per-carat prices in the world.' },
+    { month:'June',      stone:'Pearl',       emoji:'🤍', color:'#bdc3c7', fact:'The only gem created by a living creature — a symbol of purity and wisdom across cultures.' },
+    { month:'July',      stone:'Ruby',        emoji:'❤️', color:'#e74c3c', fact:'Burma rubies are the world\'s most valuable coloured stones. The "king of gems" — passion and vitality.' },
+    { month:'August',    stone:'Peridot',     emoji:'🟢', color:'#2ecc71', fact:'Formed in volcanic lava and even found in meteorites — one of the few gems born of fire.' },
+    { month:'September', stone:'Sapphire',    emoji:'💙', color:'#2c3e9e', fact:'Kashmir sapphires are extraordinarily rare — only mined for a few decades in the 1880s.' },
+    { month:'October',   stone:'Opal',        emoji:'🌈', color:'#e67e22', fact:'Each opal contains a unique universe of colour — no two are ever alike.' },
+    { month:'November',  stone:'Topaz',       emoji:'🟡', color:'#f39c12', fact:'Imperial topaz in deep orange-gold is among the rarest and most coveted of gemstones.' },
+    { month:'December',  stone:'Tanzanite',   emoji:'🔵', color:'#4361ee', fact:'Found only near Mount Kilimanjaro — tanzanite is 1,000 times rarer than diamonds.' },
+];
+
+// ===== GEMSTONE GRID DATA =====
+const gemstoneItems = [
+    // Rubies
+    { id:'r1', type:'ruby',        name:'Mogok Pigeon Blood',    origin:'Burma (Mogok)',       weight:'2.18 ct', grade:'AAA Unheated', cert:'GRS',     color:'#e63946', icon:'🔴', note:'No-heat · Pigeon blood colour · GRS "Pigeon Blood" report' },
+    { id:'r2', type:'ruby',        name:'Burmese Ruby Oval',     origin:'Burma',               weight:'1.42 ct', grade:'AA Heated',    cert:'GIA',     color:'#e63946', icon:'❤️', note:'Minor heat only · Vivid red · Eye-clean' },
+    { id:'r3', type:'ruby',        name:'Mozambique Ruby',       origin:'Mozambique',          weight:'3.05 ct', grade:'AA Unheated',  cert:'Gübelin', color:'#c1121f', icon:'🔴', note:'Unheated · Strong red fluorescence · Collector grade' },
+    { id:'r4', type:'ruby',        name:'Vivid Red Cushion',     origin:'Thailand',            weight:'0.88 ct', grade:'A Heated',     cert:'IGI',     color:'#e63946', icon:'❤️', note:'Calibrated size · Excellent for jewellery setting' },
+    // Sapphires
+    { id:'s1', type:'sapphire',    name:'Kashmir Royal Blue',    origin:'Kashmir',             weight:'1.12 ct', grade:'AAA Unheated', cert:'Gübelin', color:'#2a6be0', icon:'💙', note:'Velvety cornflower blue · Extremely rare Kashmir origin' },
+    { id:'s2', type:'sapphire',    name:'Ceylon Cornflower',     origin:'Sri Lanka',           weight:'2.56 ct', grade:'AAA Unheated', cert:'GRS',     color:'#3a86ff', icon:'🔵', note:'Cornflower blue · Sri Lanka · Unheated · Eye-clean' },
+    { id:'s3', type:'sapphire',    name:'Royal Blue Oval',       origin:'Madagascar',          weight:'4.10 ct', grade:'AA Heated',    cert:'GIA',     color:'#1d3557', icon:'💙', note:'Deep royal blue · Minor heat · Excellent brilliance' },
+    { id:'s4', type:'sapphire',    name:'Padparadscha Sapphire', origin:'Sri Lanka',           weight:'0.95 ct', grade:'AAA Unheated', cert:'GRS',     color:'#f4a261', icon:'🌸', note:'Rare pinkish-orange hue · "Lotus flower" colour · GRS certified' },
+    // Emeralds
+    { id:'e1', type:'emerald',     name:'Muzo Colombian',        origin:'Colombia (Muzo)',     weight:'1.88 ct', grade:'AAA',          cert:'GRS',     color:'#2d9e5f', icon:'💚', note:'Muzo mine · Minor oil · Vivid green · Top collector grade' },
+    { id:'e2', type:'emerald',     name:'Zambian Deep Green',    origin:'Zambia',              weight:'3.20 ct', grade:'AA',           cert:'Gübelin', color:'#1b7a40', icon:'🟢', note:'Deep bluish-green · Insignificant clarity enhancement' },
+    { id:'e3', type:'emerald',     name:'Vivid Green Pear',      origin:'Colombia',            weight:'0.92 ct', grade:'A',            cert:'AGL',     color:'#40916c', icon:'💚', note:'Calibrated pear shape · Suitable for pendant setting' },
+    // Alexandrite
+    { id:'a1', type:'alexandrite', name:'Russian Alexandrite',   origin:'Ural, Russia',        weight:'0.78 ct', grade:'AAA',          cert:'GRS',     color:'#9b5de5', icon:'🔮', note:'Strong colour change: emerald green → raspberry red' },
+    { id:'a2', type:'alexandrite', name:'Brazilian Alexandrite', origin:'Brazil',              weight:'1.30 ct', grade:'AA',           cert:'GIA',     color:'#7b2d8b', icon:'💜', note:'Good colour change · Brazilian origin · Eye-clean' },
+    // Tanzanite
+    { id:'t1', type:'tanzanite',   name:'AAA Tanzanite Oval',    origin:'Tanzania',            weight:'4.55 ct', grade:'AAA',          cert:'IGI',     color:'#4361ee', icon:'🔵', note:'Vivid blue-violet · Top D-block colour · Excellent cutting' },
+    { id:'t2', type:'tanzanite',   name:'Deep Violet Tanzanite', origin:'Tanzania',            weight:'2.80 ct', grade:'AA',           cert:'GIA',     color:'#560bad', icon:'💙', note:'Rich violet hue · Merelani Hills · Eye-clean' },
+    // Spinel
+    { id:'sp1', type:'spinel',     name:'Burma Red Spinel',      origin:'Burma (Mogok)',       weight:'1.62 ct', grade:'AAA',          cert:'GRS',     color:'#d62828', icon:'❤️', note:'Unheated · Vivid red · Mogok · No treatment whatsoever' },
+    { id:'sp2', type:'spinel',     name:'Hot Pink Spinel',       origin:'Burma / Vietnam',     weight:'0.95 ct', grade:'AA',           cert:'GIA',     color:'#e91e8c', icon:'💗', note:'Bright pinkish-red · Highly sought for modern jewellery' },
+    // Paraiba
+    { id:'p1', type:'paraiba',     name:'Brazilian Paraíba',     origin:'Paraíba, Brazil',     weight:'0.55 ct', grade:'AAA',          cert:'GRS',     color:'#00b4d8', icon:'🩵', note:'Neon electric blue · Copper-bearing · Extremely rare · GRS "Paraíba"' },
+    { id:'p2', type:'paraiba',     name:'Mozambique Paraíba',    origin:'Mozambique',          weight:'1.10 ct', grade:'AA',           cert:'GIA',     color:'#0077b6', icon:'💙', note:'Vivid blue-green · Larger size · Excellent for statement pieces' },
+];
+
+// ===== RENDER GEMSTONE GRID =====
+function renderGemGrid(filter) {
+    const grid = document.getElementById('gemGrid');
+    if (!grid) return;
+
+    const filtered = filter === 'all' ? gemstoneItems : gemstoneItems.filter(g => g.type === filter);
+    grid.innerHTML = '';
+
+    filtered.forEach((g, idx) => {
+        const card = document.createElement('div');
+        card.className = 'gem-card';
+        card.style.setProperty('--gem-color', g.color);
+        card.style.setProperty('--gem-glow', g.color + '55');
+        card.style.setProperty('--gem-bg', g.color + '18');
+        card.style.setProperty('--stagger', idx);
+        card.innerHTML = `
+          <div class="gem-card-visual">
+            <div class="gem-card-icon">${g.icon}</div>
+          </div>
+          <div class="gem-card-body">
+            <div class="gem-card-type" style="color:${g.color};">${g.type.charAt(0).toUpperCase()+g.type.slice(1)}</div>
+            <div class="gem-card-name">${g.name}</div>
+            <div class="gem-card-sub">${g.weight} · ${g.grade}</div>
+            <div class="gem-card-origin">${g.origin}</div>
+            <div class="gem-cert-badges">
+              <span class="gem-cert">${g.cert}</span>
+            </div>
+          </div>`;
+        card.onclick = () => openGemLightbox(g);
+        grid.appendChild(card);
+    });
+}
+
+// ===== FILTER GEMSTONES =====
+function filterGemstones(filter, btn) {
+    document.querySelectorAll('.gem-swatch').forEach(s => s.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const grid = document.getElementById('gemGrid');
+    if (grid) {
+        grid.style.opacity = '0';
+        grid.style.transition = 'opacity 0.22s ease';
+        setTimeout(() => {
+            renderGemGrid(filter);
+            grid.style.opacity = '1';
+        }, 220);
+    }
+}
+
+// ===== OPEN GEM LIGHTBOX =====
+function openGemLightbox(g) {
+    document.getElementById('gem-lightbox-visual').innerHTML =
+        `<div class="gem-lightbox-visual-inner" style="--gem-c:${g.color};">${g.icon}</div>`;
+    document.getElementById('gem-lightbox-title').textContent = g.name;
+    document.getElementById('gem-lightbox-sub').textContent   = g.weight + ' · ' + g.origin;
+    document.getElementById('gem-lightbox-badges').innerHTML  =
+        `<span class="gem-cert" style="border-color:${g.color}66;color:${g.color};">${g.grade}</span>` +
+        `<span class="gem-cert">${g.cert} Certified</span>` +
+        `<span class="gem-cert">${g.type.toUpperCase()}</span>`;
+    document.getElementById('gem-lightbox-details').innerHTML =
+        `<div class="gem-detail-item"><div class="gem-detail-key">Origin</div><div class="gem-detail-val">${g.origin}</div></div>` +
+        `<div class="gem-detail-item"><div class="gem-detail-key">Weight</div><div class="gem-detail-val">${g.weight}</div></div>` +
+        `<div class="gem-detail-item"><div class="gem-detail-key">Grade</div><div class="gem-detail-val">${g.grade}</div></div>` +
+        `<div class="gem-detail-item"><div class="gem-detail-key">Certificate</div><div class="gem-detail-val">${g.cert}</div></div>` +
+        `<div class="gem-detail-item" style="grid-column:1/-1"><div class="gem-detail-key">Notes</div><div class="gem-detail-val">${g.note}</div></div>`;
+    const wa = document.getElementById('gem-lightbox-wa');
+    const msg = encodeURIComponent(`Hi Anthem Jewels! I'm interested in:\n\n${g.name}\n${g.weight} · ${g.origin}\n${g.grade} · ${g.cert} Certified\n\nPlease send more details and pricing.`);
+    wa.href = `https://wa.me/918800806032?text=${msg}`;
+    document.getElementById('gemLightbox').classList.add('open');
+}
+
+// ===== CLOSE GEM LIGHTBOX =====
+function closeGemLightbox() {
+    document.getElementById('gemLightbox').classList.remove('open');
+}
+
+// Close gem lightbox on backdrop click
+document.addEventListener('click', function(e) {
+    const lb = document.getElementById('gemLightbox');
+    if (lb && lb.classList.contains('open') && e.target === lb) closeGemLightbox();
+});
+
 // ===== BUNDLE BUILDER =====
 function sendBundleToWhatsApp() {
     const diamond = document.getElementById('bundleDiamond').value;
@@ -1611,4 +1741,633 @@ function sendBundleToWhatsApp() {
 // ===== INIT GEM GRID ON PAGE LOAD (if already on gemstones) =====
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('gemGrid')) renderGemGrid('all');
+});
+
+/* ============================================================
+   ANTHEM JEWELS — PRICE CALCULATOR LOGIC
+   ============================================================ */
+
+// ===== TAB SWITCHER =====
+function switchCalcTab(tab) {
+  document.querySelectorAll('.calc-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.calc-panel').forEach(p => p.classList.toggle('active', p.id === 'calc-' + tab));
+  // Trigger stone viewer + price update for the newly active tab
+  setTimeout(function() {
+    if (tab === 'natural' && window._updateNDStone)  { window._updateNDStone(); if(window.updateNDCalc) window.updateNDCalc(); }
+    if (tab === 'lab'     && window._updateLGStone)  { window._updateLGStone(); if(window.updateLGCalc) window.updateLGCalc(); }
+    if (tab === 'gem'     && window._updateGemStone) { window._updateGemStone(); if(window.updateGemCalc) window.updateGemCalc(); }
+  }, 80);
+}
+
+// ===== CHIP SELECTOR =====
+function selectChip(el, groupId) {
+  document.querySelectorAll('#' + groupId + ' .calc-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function getChipVal(groupId) {
+  const el = document.querySelector('#' + groupId + ' .calc-chip.active');
+  return el ? el.dataset.val : '';
+}
+
+// ===== USD ↔ INR =====
+const USD_INR = 84.5; // approximate rate
+
+function fmt(val, currency) {
+  if (currency === 'INR') {
+    return '₹' + Math.round(val * USD_INR).toLocaleString('en-IN');
+  }
+  return '$' + Math.round(val).toLocaleString('en-US');
+}
+
+// ===== NATURAL DIAMOND PRICING =====
+// Base price per carat (USD) by colour × clarity (Rapaport-aligned, approx)
+const ND_BASE = {
+  D:  { FL:8000, IF:7200, VVS1:6400, VVS2:5800, VS1:5000, VS2:4400, SI1:3200, SI2:2100 },
+  E:  { FL:7200, IF:6500, VVS1:5800, VVS2:5200, VS1:4400, VS2:3800, SI1:2800, SI2:1900 },
+  F:  { FL:6500, IF:5800, VVS1:5200, VVS2:4600, VS1:3900, VS2:3400, SI1:2500, SI2:1700 },
+  G:  { FL:5600, IF:5000, VVS1:4400, VVS2:3900, VS1:3300, VS2:2900, SI1:2200, SI2:1500 },
+  H:  { FL:4800, IF:4200, VVS1:3700, VVS2:3200, VS1:2800, VS2:2400, SI1:1900, SI2:1300 },
+  I:  { FL:3900, IF:3400, VVS1:3000, VVS2:2600, VS1:2300, VS2:2000, SI1:1600, SI2:1100 },
+  J:  { FL:3100, IF:2700, VVS1:2400, VVS2:2100, VS1:1900, VS2:1700, SI1:1400, SI2: 950 },
+};
+// Carat weight multiplier (price per carat increases non-linearly)
+function caratMult(ct) {
+  if (ct < 0.5)  return 0.55;
+  if (ct < 0.75) return 0.75;
+  if (ct < 1.0)  return 0.90;
+  if (ct < 1.5)  return 1.00;
+  if (ct < 2.0)  return 1.35;
+  if (ct < 3.0)  return 1.80;
+  if (ct < 4.0)  return 2.40;
+  if (ct < 5.0)  return 3.10;
+  return 4.00;
+}
+// Shape mult (rounds trade at premium)
+const ND_SHAPE_MULT = { round:1.0, princess:0.88, oval:0.92, emerald:0.87, pear:0.89, cushion:0.86, marquise:0.88, radiant:0.85 };
+// Cut mult
+const ND_CUT_MULT = { Excellent:1.0, 'Very Good':0.92, Good:0.82 };
+
+function updateNDCalc() {
+  const ct       = parseFloat(document.getElementById('nd-carat').value);
+  const color    = getChipVal('nd-color');
+  const clarity  = getChipVal('nd-clarity');
+  const shape    = getChipVal('nd-shape');
+  const cut      = getChipVal('nd-cut');
+  const currency = getChipVal('nd-currency');
+
+  document.getElementById('nd-carat-val').textContent = ct.toFixed(2);
+
+  const basePerCt = (ND_BASE[color] || ND_BASE.D)[clarity] || 5000;
+  const shapeMult = ND_SHAPE_MULT[shape] || 1;
+  const cutMult   = ND_CUT_MULT[cut]   || 1;
+  const wMult     = caratMult(ct);
+
+  const pricePerCt = basePerCt * shapeMult * cutMult * wMult;
+  const total      = pricePerCt * ct;
+  const low        = total * 0.92;
+  const high       = total * 1.18;
+
+  // Animate
+  const priceEl = document.getElementById('nd-price');
+  priceEl.classList.remove('updating');
+  void priceEl.offsetWidth;
+  priceEl.classList.add('updating');
+
+  priceEl.textContent = fmt(low, currency) + ' – ' + fmt(high, currency);
+  document.getElementById('nd-stone-desc').textContent =
+    shape.charAt(0).toUpperCase()+shape.slice(1) + ' · ' + ct.toFixed(2) + ' ct · ' + color + ' / ' + clarity + ' · ' + cut;
+  document.getElementById('nd-base-pct').textContent  = fmt(pricePerCt, currency) + '/ct';
+  document.getElementById('nd-weight-show').textContent = ct.toFixed(2) + ' ct';
+  document.getElementById('nd-total-range').textContent = fmt(low, currency) + ' – ' + fmt(high, currency);
+}
+
+// ===== LAB GROWN DIAMOND PRICING =====
+// Lab prices are ~80-88% lower than natural on average (2024-25 market)
+const LG_BASE = {
+  D:  { FL: 900, IF: 800, VVS1: 700, VVS2: 640, VS1: 570, VS2: 510, SI1: 380, SI2: 260 },
+  E:  { FL: 800, IF: 720, VVS1: 640, VVS2: 580, VS1: 510, VS2: 460, SI1: 340, SI2: 240 },
+  F:  { FL: 720, IF: 640, VVS1: 570, VVS2: 520, VS1: 460, VS2: 410, SI1: 310, SI2: 220 },
+  G:  { FL: 620, IF: 560, VVS1: 500, VVS2: 450, VS1: 400, VS2: 360, SI1: 270, SI2: 195 },
+  H:  { FL: 540, IF: 480, VVS1: 430, VVS2: 390, VS1: 350, VS2: 310, SI1: 240, SI2: 175 },
+  I:  { FL: 460, IF: 410, VVS1: 370, VVS2: 330, VS1: 300, VS2: 270, SI1: 210, SI2: 155 },
+  J:  { FL: 380, IF: 340, VVS1: 305, VVS2: 275, VS1: 250, VS2: 225, SI1: 180, SI2: 135 },
+};
+function caratMultLG(ct) {
+  // Lab prices scale less aggressively with carat
+  if (ct < 0.5)  return 0.70;
+  if (ct < 0.75) return 0.85;
+  if (ct < 1.0)  return 0.95;
+  if (ct < 1.5)  return 1.00;
+  if (ct < 2.0)  return 1.20;
+  if (ct < 3.0)  return 1.45;
+  if (ct < 4.0)  return 1.75;
+  if (ct < 5.0)  return 2.10;
+  return 2.60;
+}
+
+function updateLGCalc() {
+  const ct       = parseFloat(document.getElementById('lg-carat').value);
+  const color    = getChipVal('lg-color');
+  const clarity  = getChipVal('lg-clarity');
+  const shape    = getChipVal('lg-shape');
+  const type     = getChipVal('lg-type');
+  const currency = getChipVal('lg-currency');
+
+  document.getElementById('lg-carat-val').textContent = ct.toFixed(2);
+
+  const basePerCt  = (LG_BASE[color] || LG_BASE.D)[clarity] || 600;
+  const shapeMult  = ND_SHAPE_MULT[shape] || 1;
+  const typeMult   = type === 'HPHT' ? 1.05 : 1.0;
+  const wMult      = caratMultLG(ct);
+
+  const pricePerCt = basePerCt * shapeMult * typeMult * wMult;
+  const total      = pricePerCt * ct;
+  const low        = total * 0.88;
+  const high       = total * 1.22;
+
+  const priceEl = document.getElementById('lg-price');
+  priceEl.classList.remove('updating');
+  void priceEl.offsetWidth;
+  priceEl.classList.add('updating');
+
+  priceEl.textContent = fmt(low, currency) + ' – ' + fmt(high, currency);
+  document.getElementById('lg-stone-desc').textContent =
+    shape.charAt(0).toUpperCase()+shape.slice(1) + ' · ' + ct.toFixed(2) + ' ct · ' + color + ' / ' + clarity + ' · ' + type;
+  document.getElementById('lg-base-pct').textContent   = fmt(pricePerCt, currency) + '/ct';
+  document.getElementById('lg-weight-show').textContent = ct.toFixed(2) + ' ct';
+  document.getElementById('lg-total-range').textContent = fmt(low, currency) + ' – ' + fmt(high, currency);
+}
+
+// ===== GEMSTONE PRICING =====
+// Base per carat for AAA unheated standard origin (USD)
+const GEM_BASE_PER_CT = {
+  ruby:        8000,
+  sapphire:    4000,
+  emerald:     3500,
+  alexandrite: 6000,
+  paraiba:    12000,
+  spinel:      1800,
+  tanzanite:    800,
+  tsavorite:   2200,
+};
+const GEM_QUALITY_MULT = { AAA:1.00, AA:0.65, A:0.40, B:0.22 };
+const GEM_TREAT_MULT   = { unheated:1.00, heated:0.55 };
+const GEM_ORIGIN_MULT  = { premium:1.80, standard:1.00 };
+
+function caratMultGem(ct) {
+  if (ct < 0.5)  return 0.65;
+  if (ct < 1.0)  return 0.85;
+  if (ct < 2.0)  return 1.00;
+  if (ct < 3.0)  return 1.55;
+  if (ct < 5.0)  return 2.20;
+  return 3.20;
+}
+
+const GEM_ORIGIN_NOTES = {
+  ruby:        'e.g. Burma (Mogok), Mozambique',
+  sapphire:    'e.g. Kashmir, Ceylon (Sri Lanka)',
+  emerald:     'e.g. Colombian (Muzo), Zambian',
+  alexandrite: 'e.g. Russian, Brazilian',
+  paraiba:     'e.g. Brazilian, Mozambique',
+  spinel:      'e.g. Burma, Tajikistan',
+  tanzanite:   'Standard: Tanzania only',
+  tsavorite:   'Standard: East Africa only',
+};
+
+function updateGemCalc() {
+  const ct        = parseFloat(document.getElementById('gem-carat').value);
+  const type      = getChipVal('gem-type');
+  const quality   = getChipVal('gem-quality');
+  const treatment = getChipVal('gem-treatment');
+  const origin    = getChipVal('gem-origin');
+  const currency  = getChipVal('gem-currency');
+
+  document.getElementById('gem-carat-val').textContent = ct.toFixed(2);
+  document.getElementById('gem-origin-note').textContent = GEM_ORIGIN_NOTES[type] || '';
+
+  const basePerCt  = GEM_BASE_PER_CT[type] || 2000;
+  const qualMult   = GEM_QUALITY_MULT[quality] || 1;
+  const treatMult  = GEM_TREAT_MULT[treatment] || 1;
+  const originMult = GEM_ORIGIN_MULT[origin] || 1;
+  const wMult      = caratMultGem(ct);
+
+  const pricePerCt = basePerCt * qualMult * treatMult * originMult * wMult;
+  const total      = pricePerCt * ct;
+  const low        = total * 0.80;
+  const high       = total * 1.30;
+
+  const priceEl = document.getElementById('gem-price');
+  priceEl.classList.remove('updating');
+  void priceEl.offsetWidth;
+  priceEl.classList.add('updating');
+
+  const typeName = type.charAt(0).toUpperCase() + type.slice(1);
+  priceEl.textContent = fmt(low, currency) + ' – ' + fmt(high, currency);
+  document.getElementById('gem-stone-desc').textContent =
+    typeName + ' · ' + ct.toFixed(2) + ' ct · ' + quality + ' · ' + (treatment === 'unheated' ? 'Unheated' : 'Heated') + ' · ' + (origin === 'premium' ? 'Premium Origin' : 'Standard Origin');
+  document.getElementById('gem-base-pct').textContent    = fmt(basePerCt * qualMult * treatMult * originMult, currency) + '/ct base';
+  document.getElementById('gem-quality-mult').textContent = qualMult.toFixed(2) + '×';
+  document.getElementById('gem-treat-mult').textContent   = treatMult.toFixed(2) + '×';
+  document.getElementById('gem-origin-mult').textContent  = originMult.toFixed(2) + '×';
+  document.getElementById('gem-total-range').textContent  = fmt(low, currency) + ' – ' + fmt(high, currency);
+}
+
+// ===== WHATSAPP INQUIRY =====
+function inquireCalcWhatsApp(mode) {
+  let msg = '';
+  if (mode === 'natural') {
+    const ct      = parseFloat(document.getElementById('nd-carat').value).toFixed(2);
+    const color   = getChipVal('nd-color');
+    const clarity = getChipVal('nd-clarity');
+    const shape   = getChipVal('nd-shape');
+    const cut     = getChipVal('nd-cut');
+    const price   = document.getElementById('nd-price').textContent;
+    msg = `Hi Anthem Jewels, I used your Price Calculator and I'm interested in a Natural Diamond:\n\n` +
+          `Shape: ${shape}\nCarat: ${ct} ct\nColour: ${color}\nClarity: ${clarity}\nCut: ${cut}\n\nEstimated Range: ${price}\n\nPlease send me an exact quote.`;
+  } else if (mode === 'lab') {
+    const ct      = parseFloat(document.getElementById('lg-carat').value).toFixed(2);
+    const color   = getChipVal('lg-color');
+    const clarity = getChipVal('lg-clarity');
+    const shape   = getChipVal('lg-shape');
+    const type    = getChipVal('lg-type');
+    const price   = document.getElementById('lg-price').textContent;
+    msg = `Hi Anthem Jewels, I used your Price Calculator and I'm interested in a Lab Grown Diamond:\n\n` +
+          `Shape: ${shape}\nCarat: ${ct} ct\nColour: ${color}\nClarity: ${clarity}\nGrowth: ${type}\n\nEstimated Range: ${price}\n\nPlease send me an exact quote.`;
+  } else {
+    const ct        = parseFloat(document.getElementById('gem-carat').value).toFixed(2);
+    const type      = getChipVal('gem-type');
+    const quality   = getChipVal('gem-quality');
+    const treatment = getChipVal('gem-treatment');
+    const origin    = getChipVal('gem-origin');
+    const price     = document.getElementById('gem-price').textContent;
+    msg = `Hi Anthem Jewels, I used your Price Calculator and I'm interested in a Gemstone:\n\n` +
+          `Type: ${type}\nCarat: ${ct} ct\nQuality: ${quality}\nTreatment: ${treatment}\nOrigin: ${origin}\n\nEstimated Range: ${price}\n\nPlease send me an exact quote.`;
+  }
+  window.open('https://wa.me/918800806032?text=' + encodeURIComponent(msg), '_blank');
+}
+
+
+/* ============================================================
+   CALCULATOR — INIT & AUTO-TRIGGER
+   Called directly by HTML onclick, also triggered on page show
+   ============================================================ */
+
+// Trigger calcs when calculator tab is opened
+// We patch showPage ONCE after all other code has run
+
+/* ============================================================
+   3D STONE VIEWER — lazy init when calculator page is shown
+   ============================================================ */
+var _stoneViewersReady = false;
+
+function waitAndInitViewers() {
+  if (_stoneViewersReady) return;
+  // Don't try to init if canvases have zero size (page hidden)
+  var cv = document.getElementById('cv-nd-stone');
+  if (!cv) return;
+  // Force page visible temporarily to get real dimensions
+  var calcPage = document.getElementById('calculator');
+  var wasHidden = calcPage && calcPage.style.display === 'none';
+
+  if (window.THREE) {
+    initStoneViewers();
+  } else {
+    var tries = 0;
+    var iv = setInterval(function() {
+      tries++;
+      if (window.THREE) { clearInterval(iv); initStoneViewers(); }
+      if (tries > 80)   { clearInterval(iv); }
+    }, 200);
+  }
+}
+
+// Only init when calculator page is actually shown (not on window load — page is hidden then)
+
+function initStoneViewers() {
+  var THREE = window.THREE;
+  if (!THREE) return;
+  if (_stoneViewersReady) return;
+
+  /* ---- colour palettes [base hex, emissive hex, specular hex] ---- */
+  var PAL = {
+    // Diamond shapes — icy white/blue
+    round:       [0xe8f5ff, 0xaadeff, 0xffffff],
+    princess:    [0xeaf6ff, 0xb0dcff, 0xffffff],
+    oval:        [0xe4f4ff, 0xacd8f8, 0xffffff],
+    emerald:     [0xdcecff, 0xa0c8f0, 0xffffff],
+    pear:        [0xeaf8ff, 0xb4d8ff, 0xffffff],
+    cushion:     [0xe4f2ff, 0xaacce8, 0xffffff],
+    marquise:    [0xe8f4ff, 0xaed0f8, 0xffffff],
+    radiant:     [0xe2eeff, 0xa8c4e8, 0xffffff],
+    // Gemstones — rich saturated
+    ruby:        [0xff1133, 0xff0022, 0xffaacc],
+    sapphire:    [0x1133ff, 0x0022ee, 0x88aaff],
+    emerald_gem: [0x00cc44, 0x009933, 0x66ffaa],
+    alexandrite: [0xcc00ff, 0xaa00dd, 0xee88ff],
+    paraiba:     [0x00eedd, 0x00ccbb, 0x88ffee],
+    spinel:      [0xff1155, 0xdd0033, 0xff99bb],
+    tanzanite:   [0x6633ff, 0x5522ee, 0xccbbff],
+    tsavorite:   [0x00cc33, 0x009922, 0x66ff88],
+  };
+
+  /* ---- geometry helpers ---- */
+  function ring(n, rx, rz, y) {
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var a = (i / n) * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.cos(a) * rx, y, Math.sin(a) * rz));
+    }
+    return pts;
+  }
+
+  function addTri(vArr, cArr, a, b, c, br) {
+    vArr.push(a.x,a.y,a.z, b.x,b.y,b.z, c.x,c.y,c.z);
+    br = br === undefined ? 0.85 : br;
+    cArr.push(br,br,br, br*0.80,br*0.80,br*0.80, br*0.60,br*0.60,br*0.60);
+  }
+
+  function mkGeo(v, c) {
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    g.setAttribute('color',    new THREE.Float32BufferAttribute(c, 3));
+    g.computeVertexNormals();
+    return g;
+  }
+
+  function geoRound(rx, rz) {
+    rx = rx||0.88; rz = rz||0.88;
+    var n=10, v=[], c=[];
+    var gT=ring(n,rx,rz,0.05), gB=ring(n,rx,rz,-0.05);
+    var tV=ring(n,rx*0.58,rz*0.58,0.44);
+    var tC=new THREE.Vector3(0,0.46,0), cu=new THREE.Vector3(0,-0.82,0);
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,tC,tV[i],tV[j],0.98);}
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,tV[i],gT[i],tV[j],i%2?0.95:0.75); addTri(v,c,tV[j],gT[i],gT[j],i%2?0.70:0.88);}
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,gT[i],gT[j],gB[i],0.55); addTri(v,c,gT[j],gB[j],gB[i],0.55);}
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,gB[i],gB[j],cu,i%2?0.45:0.60);}
+    return mkGeo(v,c);
+  }
+
+  function geoStep(w, d) {
+    w=w||0.88; d=d||0.62;
+    var v=[], c=[];
+    function sq(fw,fd,y){ return [new THREE.Vector3(-fw,y,-fd),new THREE.Vector3(fw,y,-fd),new THREE.Vector3(fw,y,fd),new THREE.Vector3(-fw,y,fd)]; }
+    var t=sq(w*0.60,d*0.60,0.55), g0=sq(w,d,0.05), g1=sq(w,d,-0.05), cu=new THREE.Vector3(0,-0.82,0), tC=new THREE.Vector3(0,0.57,0);
+    addTri(v,c,tC,t[0],t[1],0.98); addTri(v,c,tC,t[1],t[2],0.98); addTri(v,c,tC,t[2],t[3],0.98); addTri(v,c,tC,t[3],t[0],0.98);
+    for(var i=0;i<4;i++){var j=(i+1)%4; addTri(v,c,t[i],g0[i],t[j],i%2?0.80:0.65); addTri(v,c,t[j],g0[i],g0[j],i%2?0.65:0.80);}
+    for(var i=0;i<4;i++){var j=(i+1)%4; addTri(v,c,g0[i],g0[j],g1[i],0.55); addTri(v,c,g0[j],g1[j],g1[i],0.55);}
+    for(var i=0;i<4;i++){var j=(i+1)%4; addTri(v,c,g1[i],g1[j],cu,i%2?0.45:0.60);}
+    return mkGeo(v,c);
+  }
+
+  function geoPear() {
+    var n=12, v=[], c=[];
+    var gT=[],gB=[],tV=[];
+    for(var i=0;i<n;i++){
+      var a=(i/n)*Math.PI*2, px=Math.cos(a)*0.80*(1-0.24*Math.cos(a)), pz=Math.sin(a)*0.62;
+      gT.push(new THREE.Vector3(px,0.05,pz)); gB.push(new THREE.Vector3(px,-0.05,pz)); tV.push(new THREE.Vector3(px*0.60,0.42,pz*0.60));
+    }
+    var tC=new THREE.Vector3(-0.08,0.44,0), cu=new THREE.Vector3(0,-0.80,0);
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,tC,tV[i],tV[j],0.98);}
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,tV[i],gT[i],tV[j],i%2?0.90:0.70); addTri(v,c,tV[j],gT[i],gT[j],i%2?0.70:0.85);}
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,gT[i],gT[j],gB[i],0.55); addTri(v,c,gT[j],gB[j],gB[i],0.55);}
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,gB[i],gB[j],cu,0.48);}
+    return mkGeo(v,c);
+  }
+
+  function geoCushion() {
+    var n=12, v=[], c=[];
+    function cp(i,y){ var a=(i/n)*Math.PI*2, s=1-0.09*Math.pow(Math.abs(Math.cos(a*2)),4); return new THREE.Vector3(Math.cos(a)*0.88*s,y,Math.sin(a)*0.88*s); }
+    var gT=[],gB=[],tV=[];
+    for(var i=0;i<n;i++){ gT.push(cp(i,0.05)); gB.push(cp(i,-0.05)); var p=cp(i,0.43); p.x*=0.60; p.z*=0.60; tV.push(p); }
+    var tC=new THREE.Vector3(0,0.45,0), cu=new THREE.Vector3(0,-0.80,0);
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,tC,tV[i],tV[j],0.98);}
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,tV[i],gT[i],tV[j],i%2?0.90:0.70); addTri(v,c,tV[j],gT[i],gT[j],i%2?0.70:0.85);}
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,gT[i],gT[j],gB[i],0.55); addTri(v,c,gT[j],gB[j],gB[i],0.55);}
+    for(var i=0;i<n;i++){var j=(i+1)%n; addTri(v,c,gB[i],gB[j],cu,0.48);}
+    return mkGeo(v,c);
+  }
+
+  /* shape key → geometry builder */
+  var GEO = {
+    round:       function(){ return geoRound(); },
+    princess:    function(){ return geoStep(0.84,0.84); },
+    oval:        function(){ return geoRound(1.08,0.70); },
+    emerald:     function(){ return geoStep(0.88,0.62); },
+    pear:        geoPear,
+    cushion:     geoCushion,
+    marquise:    function(){ return geoRound(1.14,0.50); },
+    radiant:     function(){ var n=8,v=[],c=[]; var gT=ring(n,0.84,0.78,0.05),gB=ring(n,0.84,0.78,-0.05),tV=ring(n,0.50,0.46,0.42); var tC=new THREE.Vector3(0,0.44,0),cu=new THREE.Vector3(0,-0.80,0); for(var i=0;i<n;i++){var j=(i+1)%n;addTri(v,c,tC,tV[i],tV[j],0.98);} for(var i=0;i<n;i++){var j=(i+1)%n;addTri(v,c,tV[i],gT[i],tV[j],i%2?0.90:0.70);addTri(v,c,tV[j],gT[i],gT[j],i%2?0.70:0.85);} for(var i=0;i<n;i++){var j=(i+1)%n;addTri(v,c,gT[i],gT[j],gB[i],0.55);addTri(v,c,gT[j],gB[j],gB[i],0.55);} for(var i=0;i<n;i++){var j=(i+1)%n;addTri(v,c,gB[i],gB[j],cu,0.48);} return mkGeo(v,c); },
+    ruby:        function(){ return geoRound(); },
+    sapphire:    function(){ return geoRound(); },
+    emerald_gem: function(){ return geoStep(0.88,0.62); },
+    alexandrite: function(){ return geoRound(); },
+    paraiba:     function(){ return geoRound(); },
+    spinel:      function(){ return geoRound(); },
+    tanzanite:   function(){ return geoRound(1.08,0.70); },
+    tsavorite:   function(){ return geoRound(); },
+  };
+
+  /* ---- Single viewer factory ---- */
+  function makeViewer(canvasEl) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var W = 280, H = 280;
+    canvasEl.width  = W * dpr;
+    canvasEl.height = H * dpr;
+    var scene = new THREE.Scene();
+    var cam = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
+    cam.position.set(0, 0.1, 3.6);
+    var ren = new THREE.WebGLRenderer({ canvas: canvasEl, alpha: true, antialias: true });
+    ren.setSize(W, H);
+    ren.setPixelRatio(dpr);
+    ren.setClearColor(0, 0);
+
+    var kL=new THREE.DirectionalLight(0xffffff,2.8); kL.position.set(3,4,3); scene.add(kL);
+    var sL=new THREE.DirectionalLight(0xffffff,1.2); sL.position.set(-3,2,2); scene.add(sL);
+    var rL=new THREE.DirectionalLight(0xffffff,1.4); rL.position.set(0,-3,-3); scene.add(rL);
+    var fL=new THREE.DirectionalLight(0xffffff,0.8); fL.position.set(0,0,5); scene.add(fL);
+    scene.add(new THREE.AmbientLight(0xffffff,0.6));
+
+    var grp=new THREE.Group(); scene.add(grp);
+    var mesh=null, iMesh=null;
+
+    // sparkles
+    var spkN=30, spkArr=new Float32Array(spkN*3);
+    for(var i=0;i<spkN;i++){var r=1.3+Math.random()*0.5,ta=Math.random()*Math.PI*2,pa=Math.random()*Math.PI;spkArr[i*3]=r*Math.sin(pa)*Math.cos(ta);spkArr[i*3+1]=r*Math.cos(pa);spkArr[i*3+2]=r*Math.sin(pa)*Math.sin(ta);}
+    var spkGeo=new THREE.BufferGeometry(); spkGeo.setAttribute('position',new THREE.BufferAttribute(spkArr,3));
+    var spkMat=new THREE.PointsMaterial({size:0.04,color:0xffffff,transparent:true,opacity:0.7,sizeAttenuation:true});
+    scene.add(new THREE.Points(spkGeo,spkMat));
+
+    function setStone(pk, sk) {
+      if(mesh)  { grp.remove(mesh);  mesh.geometry.dispose();  mesh.material.dispose(); }
+      if(iMesh) { grp.remove(iMesh); iMesh.geometry.dispose(); iMesh.material.dispose(); }
+      var pal = PAL[pk] || PAL.round;
+      var bC=new THREE.Color(pal[0]), eC=new THREE.Color(pal[1]), sC=new THREE.Color(pal[2]);
+      var builder = GEO[sk] || GEO[pk] || GEO.round;
+      var geo = builder();
+      // tint vertex colours
+      var ca=geo.getAttribute('color');
+      for(var i=0;i<ca.count;i++){
+        var br=ca.getX(i);
+        var fc = br>0.88 ? bC : (br>0.72 ? bC : eC);
+        ca.setXYZ(i, fc.r*br, fc.g*br, fc.b*br);
+      }
+      ca.needsUpdate=true;
+      mesh  = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({vertexColors:true,color:bC,emissive:new THREE.Color(pal[1]).multiplyScalar(0.20),specular:sC,shininess:340,transparent:true,opacity:0.90,side:THREE.DoubleSide}));
+      iMesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({vertexColors:true,color:bC,transparent:true,opacity:0.14,shininess:500,specular:sC,side:THREE.FrontSide}));
+      mesh.position.y=0.08; iMesh.scale.setScalar(0.83); iMesh.position.y=0.08;
+      grp.add(mesh); grp.add(iMesh);
+      kL.color.set(sC); rL.color.set(bC); spkMat.color.set(pal[2]);
+    }
+
+    // drag
+    var drag=false, pM={x:0,y:0}, vx=0, vy=0;
+    canvasEl.addEventListener('mousedown',function(e){drag=true;pM={x:e.clientX,y:e.clientY};canvasEl.style.cursor='grabbing';});
+    window.addEventListener('mouseup',function(){drag=false;canvasEl.style.cursor='grab';});
+    window.addEventListener('mousemove',function(e){if(!drag)return;vy=(e.clientX-pM.x)*0.009;vx=(e.clientY-pM.y)*0.009;pM={x:e.clientX,y:e.clientY};});
+    var pT=null;
+    canvasEl.addEventListener('touchstart',function(e){pT=e.touches[0];drag=true;},{passive:true});
+    canvasEl.addEventListener('touchmove',function(e){if(!pT)return;vy=(e.touches[0].clientX-pT.clientX)*0.009;vx=(e.touches[0].clientY-pT.clientY)*0.009;pT=e.touches[0];},{passive:true});
+    canvasEl.addEventListener('touchend',function(){drag=false;pT=null;});
+    canvasEl.style.cursor='grab';
+
+    var t=0;
+    (function loop(){
+      requestAnimationFrame(loop); t+=0.014;
+      if(!drag){vx*=0.92;vy*=0.92;grp.rotation.y+=0.009+vy;grp.rotation.x+=vx;}
+      else{grp.rotation.y+=vy;grp.rotation.x+=vx;}
+      grp.rotation.x=Math.max(-0.7,Math.min(0.7,grp.rotation.x));
+      spkMat.opacity=0.45+Math.sin(t*2.2)*0.30;
+      kL.position.x=Math.cos(t*0.38)*3; kL.position.z=Math.sin(t*0.38)*3;
+      if(iMesh) iMesh.scale.setScalar(0.80+Math.sin(t*1.9)*0.04);
+      ren.render(scene,cam);
+    })();
+
+    return { setStone: setStone };
+  }
+
+  /* ---- inject canvases ---- */
+  function getCanvas(cvId) {
+    var cv = document.getElementById(cvId);
+    if (!cv) return null;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Force physical size — 280px display, scaled by dpr for HiDPI
+    cv.width  = 280 * dpr;
+    cv.height = 280 * dpr;
+    cv.style.width  = '280px';
+    cv.style.height = '280px';
+    return cv;
+  }
+
+  var cvND  = getCanvas('cv-nd-stone');
+  var cvLG  = getCanvas('cv-lg-stone');
+  var cvGem = getCanvas('cv-gem-stone');
+
+  // If any canvas failed, abort — will retry next time showPage('calculator') is called
+  if (!cvND || !cvLG || !cvGem) return;
+
+  _stoneViewersReady = true;
+
+  var vND  = cvND  ? makeViewer(cvND)  : null;
+  var vLG  = cvLG  ? makeViewer(cvLG)  : null;
+  var vGem = cvGem ? makeViewer(cvGem) : null;
+
+  if(vND)  vND.setStone('round','round');
+  if(vLG)  vLG.setStone('round','round');
+  if(vGem) vGem.setStone('ruby','ruby');
+
+  /* ---- expose updaters so calc functions can call them ---- */
+  window._updateNDStone = function() {
+    if(!vND) return;
+    var el=document.querySelector('#nd-shape .calc-chip.active');
+    var shape = el ? el.dataset.val : 'round';
+    // Use shape as palette key (diamond shapes have their own palette entries)
+    vND.setStone(shape, shape);
+  };
+  window._updateLGStone = function() {
+    if(!vLG) return;
+    var el=document.querySelector('#lg-shape .calc-chip.active');
+    var shape = el ? el.dataset.val : 'round';
+    vLG.setStone(shape, shape);
+  };
+  window._updateGemStone = function() {
+    if(!vGem) return;
+    var el=document.querySelector('#gem-type .calc-chip.active');
+    if(!el) return;
+    var gv=el.dataset.val||'ruby';
+    var pk = gv==='emerald' ? 'emerald_gem' : gv;
+    var sk = gv==='tanzanite'?'tanzanite':(gv==='emerald'?'emerald_gem':gv);
+    vGem.setStone(pk, sk);
+  };
+}
+
+/* ---- Hook stone updates into existing calc functions ---- */
+/* These run AFTER initStoneViewers sets up window._update*Stone */
+var _ndOrig  = window.updateNDCalc;
+var _lgOrig  = window.updateLGCalc;
+var _gemOrig = window.updateGemCalc;
+
+window.updateNDCalc = function() {
+  if(_ndOrig)  _ndOrig();
+  if(window._updateNDStone)  window._updateNDStone();
+};
+window.updateLGCalc = function() {
+  if(_lgOrig)  _lgOrig();
+  if(window._updateLGStone)  window._updateLGStone();
+};
+window.updateGemCalc = function() {
+  if(_gemOrig) _gemOrig();
+  if(window._updateGemStone) window._updateGemStone();
+};
+
+
+/* ============================================================
+   CENTRAL showPage DISPATCHER — replaces all scattered wraps
+   All page-change side effects live here.
+   ============================================================ */
+(function() {
+    var _coreShowPage = window.showPage;
+
+    window.showPage = function(name) {
+        // 1. Gold wipe animation
+        _triggerPageWipe();
+
+        // 2. Call core navigation
+        var result = _coreShowPage(name);
+
+        // 3. Per-page hooks
+        if (name === 'gemstones') {
+            renderGemGrid('all');
+            initBirthstone(); // idempotent — checks dataset.init
+            document.querySelectorAll('.gem-swatch').forEach(function(s) { s.classList.remove('active'); });
+            var firstSwatch = document.querySelector('.gem-swatch');
+            if (firstSwatch) firstSwatch.classList.add('active');
+        }
+
+        if (name === 'calculator') {
+            // Trigger price calculations
+            setTimeout(function() {
+                if (typeof updateNDCalc  === 'function') updateNDCalc();
+                if (typeof updateLGCalc  === 'function') updateLGCalc();
+                if (typeof updateGemCalc === 'function') updateGemCalc();
+            }, 80);
+
+            // Init 3D stone viewers (lazy, once)
+            setTimeout(function() {
+                if (!_stoneViewersReady) waitAndInitViewers();
+            }, 120);
+        }
+
+        return result;
+    };
+})();
+
+/* ============================================================
+   CALCULATOR — initial run on page load
+   ============================================================ */
+window.addEventListener('load', function() {
+    // Run calcs once so values are ready even before user visits calculator
+    if (typeof updateNDCalc  === 'function') updateNDCalc();
+    if (typeof updateLGCalc  === 'function') updateLGCalc();
+    if (typeof updateGemCalc === 'function') updateGemCalc();
 });
